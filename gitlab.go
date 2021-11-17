@@ -181,6 +181,7 @@ func TransmitRobot(ctx *gin.Context) {
 	data := []byte(buildMsg(content, true))
 	client := NewAPIClient()
 	resp, wxErr = client.Post(requestUrl, "application/json", bytes.NewBuffer(data))
+	defer resp.Body.Close()
 	if wxErr != nil {
 		ctx.JSON(500, WxResp{ErrCode: 500, ErrMsg: fmt.Sprintf("Request wexin robot err: %s ", wxErr)})
 		return
