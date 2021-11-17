@@ -1,4 +1,4 @@
-module git.lcgc.work/jijindou/gitlabot
+module github.com/bujnlc8/gitlabot
 
 go 1.17
 
