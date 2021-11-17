@@ -1,3 +1,5 @@
+![build status](https://github.com/bujnlc8/gitlabot/actions/workflows/gitlabot.yml/badge.svg)
+
 # gitlabot
 
 ## 将gitlab的webhook消息转发到企业微信机器人
