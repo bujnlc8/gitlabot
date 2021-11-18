@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin/render"
 )
 
-func NewAPIClient() *http.Client {
+func NewClient() *http.Client {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -67,6 +67,23 @@ type MRPushBody struct {
 	ObjectAttributes MRObjects  `json:"object_attributes"`
 }
 
+// PipelineBody
+type PipelineBody struct {
+	ObjectAttributes PipelineObject `json:"object_attributes"`
+	User             IssueUser      `json:"user"`
+	Project          Project        `json:"project"`
+}
+
+type PipelineObject struct {
+	Id         int64  `json:"id"`
+	Ref        string `json:"ref"`
+	Status     string `json:"status"`
+	CreatedAt  string `json:"created_at"`
+	FinishedAt string `json:"finished_at"`
+	Duration   int64  `json:"duration"`
+	Tag        bool   `json:"tag"`
+}
+
 type MRObjects struct {
 	Id           int64  `json:"id"`
 	TargetBranch string `json:"target_branch"`
@@ -107,6 +124,12 @@ type Repository struct {
 	GitSSHUrl string `json:"git_ssh_url"`
 }
 
+type Project struct {
+	Name      string `json:"name"`
+	WebUrl    string `json:"web_url"`
+	GitSSHUrl string `json:"git_ssh_url"`
+}
+
 func bindJson(ctx *gin.Context, m interface{}) error {
 	err := ctx.BindJSON(m)
 	if err != nil {
@@ -136,8 +159,7 @@ func TransmitRobot(ctx *gin.Context) {
 	pushEvent := ctx.GetHeader("X-Gitlab-Event")
 	if pushEvent == "Push Hook" {
 		pushBody := &PushBody{}
-		err := bindJson(ctx, pushBody)
-		if err != nil {
+		if err := bindJson(ctx, pushBody); err != nil {
 			return
 		}
 		if len(pushBody.Commits) == 0 {
@@ -145,7 +167,7 @@ func TransmitRobot(ctx *gin.Context) {
 			return
 		}
 		content = "# " + pushBody.Repository.Name + "\n"
-		content += "## On branch " + pushBody.Ref + "\n"
+		content += "### On branch `" + pushBody.Ref + "`\n"
 		for _, v := range pushBody.Commits {
 			content += fmt.Sprintf("%s push a commit [%s](%s)  %s", v.Author.Name, strings.ReplaceAll(v.Message, "\n", ""), v.Url, v.TimeStamp) + "\n\n"
 		}
@@ -177,9 +199,34 @@ func TransmitRobot(ctx *gin.Context) {
 		}
 		content = "# " + mrBody.Repository.Name + "\n"
 		content += fmt.Sprintf("%s `%s` a merge request from `%s` to `%s` \n[Detail>>](%s)", mrBody.User.Name, mrBody.ObjectAttributes.Action, mrBody.ObjectAttributes.SourceBranch, mrBody.ObjectAttributes.TargetBranch, mrBody.ObjectAttributes.Url)
+	} else if pushEvent == "Pipeline Hook" {
+		pipelineBody := &PipelineBody{}
+		if err := bindJson(ctx, pipelineBody); err != nil {
+			return
+		}
+		content = "# " + pipelineBody.Project.Name + "\n"
+		branch := "branch"
+		if pipelineBody.ObjectAttributes.Tag {
+			branch = "tag"
+		}
+		content += fmt.Sprintf("### On %s `%s`\n", branch, pipelineBody.ObjectAttributes.Ref)
+		status := "✅"
+		if pipelineBody.ObjectAttributes.Status != "success" {
+			status = "🐛"
+		}
+		content += "`Pipeline Status`: " + status + "\n"
+		content += fmt.Sprintf("`Start at`: %s\n", pipelineBody.ObjectAttributes.CreatedAt)
+		if len(pipelineBody.ObjectAttributes.FinishedAt) > 0 {
+			content += fmt.Sprintf("`Finish at`: %s\n", pipelineBody.ObjectAttributes.FinishedAt)
+		}
+		content += fmt.Sprintf("`Duration`: %ds", pipelineBody.ObjectAttributes.Duration)
+	}
+	if len(content) == 0 {
+		ctx.JSON(200, WxResp{ErrCode: 0, ErrMsg: "no content"})
+		return
 	}
 	data := []byte(buildMsg(content, true))
-	client := NewAPIClient()
+	client := NewClient()
 	resp, wxErr = client.Post(requestUrl, "application/json", bytes.NewBuffer(data))
 	defer resp.Body.Close()
 	if wxErr != nil {
