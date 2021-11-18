@@ -209,17 +209,21 @@ func TransmitRobot(ctx *gin.Context) {
 		if pipelineBody.ObjectAttributes.Tag {
 			branch = "tag"
 		}
-		content += fmt.Sprintf("### On %s `%s`\n", branch, pipelineBody.ObjectAttributes.Ref)
+		content += fmt.Sprintf("### Pipeline on %s `%s`\n", branch, pipelineBody.ObjectAttributes.Ref)
 		status := "✅"
-		if pipelineBody.ObjectAttributes.Status != "success" {
+		if pipelineBody.ObjectAttributes.Status == "failed" {
 			status = "🐛"
+		} else if pipelineBody.ObjectAttributes.Status == "running" {
+			status = "🚀"
 		}
-		content += "`Pipeline Status`: " + status + "\n"
+		content += "`Status`: " + status + "\n"
 		content += fmt.Sprintf("`Start at`: %s\n", pipelineBody.ObjectAttributes.CreatedAt)
 		if len(pipelineBody.ObjectAttributes.FinishedAt) > 0 {
 			content += fmt.Sprintf("`Finish at`: %s\n", pipelineBody.ObjectAttributes.FinishedAt)
 		}
-		content += fmt.Sprintf("`Duration`: %ds", pipelineBody.ObjectAttributes.Duration)
+		if pipelineBody.ObjectAttributes.Duration > 0 {
+			content += fmt.Sprintf("`Duration`: %ds", pipelineBody.ObjectAttributes.Duration)
+		}
 	}
 	if len(content) == 0 {
 		ctx.JSON(200, WxResp{ErrCode: 0, ErrMsg: "no content"})
