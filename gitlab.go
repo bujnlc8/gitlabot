@@ -12,6 +12,83 @@ import (
 	"github.com/gin-gonic/gin/render"
 )
 
+var GitEmojiMap = map[string]string{
+	":bulb:":                      "💡",
+	":heavy_minus_sign:":          "➖",
+	":bug:":                       "🐛",
+	":art:":                       "🎨",
+	":hammer:":                    "🔨",
+	":sparkles:":                  "✨",
+	":building_construction:":     "🏗️",
+	":wrench:":                    "🔧",
+	":triangular_flag_on_post:":   "🚩",
+	":arrow_down:":                "⬇️",
+	":label:":                     "🏷️",
+	":dizzy:":                     "💫",
+	":white_check_mark:":          "✅",
+	":mag:":                       "🔍️",
+	":bento:":                     "🍱",
+	":chart_with_upwards_trend:":  "📈",
+	":beers:":                     "🍻",
+	":boom:":                      "💥",
+	":bookmark:":                  "🔖",
+	":monocle_face:":              "🧐",
+	":recycle:":                   "♻️",
+	":card_file_box:":             "🗃️",
+	":globe_with_meridians:":      "🌐",
+	":adhesive_bandage:":          "🩹",
+	":pushpin:":                   "📌",
+	":iphone:":                    "📱",
+	":test_tube:":                 "🧪",
+	":page_facing_up:":            "📄",
+	":alien:":                     "👽️",
+	":children_crossing:":         "🚸",
+	":poop:":                      "💩",
+	":heavy_plus_sign:":           "➕",
+	":necktie:":                   "👔",
+	":rotating_light:":            "🚨",
+	":memo:":                      "📝",
+	":loud_sound:":                "🔊",
+	":construction:":              "🚧",
+	":fire:":                      "🔥",
+	":zap:":                       "⚡️",
+	":stethoscope:":               "🩺",
+	":package:":                   "📦️",
+	":camera_flash:":              "📸",
+	":lipstick:":                  "💄",
+	":mute:":                      "🔇",
+	":rocket:":                    "🚀",
+	":lock:":                      "🔒️",
+	":ambulance:":                 "🚑️",
+	":pencil2:":                   "✏️",
+	":arrow_up:":                  "⬆️",
+	":clown_face:":                "🤡",
+	":truck:":                     "🚚",
+	":goal_net:":                  "🥅",
+	":egg:":                       "🥚",
+	":speech_balloon:":            "💬",
+	":construction_worker:":       "👷",
+	":passport_control:":          "🛂",
+	":rewind:":                    "⏪️",
+	":wheelchair:":                "♿️",
+	":alembic:":                   "⚗️",
+	":seedling:":                  "🌱",
+	":green_heart:":               "💚",
+	":tada:":                      "🎉",
+	":busts_in_silhouette:":       "👥",
+	":twisted_rightwards_arrows:": "🔀",
+	":wastebasket:":               "🗑️",
+	":coffin:":                    "⚰️",
+	":see_no_evil:":               "🙈",
+}
+
+func trans2Emoji(content string) string {
+	for k, v := range GitEmojiMap {
+		content = strings.ReplaceAll(content, k, v)
+	}
+	return content
+}
+
 func NewClient() *http.Client {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -237,6 +314,7 @@ func TransmitRobot(ctx *gin.Context) {
 		ctx.JSON(200, WxResp{ErrCode: 0, ErrMsg: "no content"})
 		return
 	}
+	content = trans2Emoji(content)
 	data := []byte(buildMsg(content, true))
 	client := NewClient()
 	resp, wxErr = client.Post(requestUrl, "application/json", bytes.NewBuffer(data))
