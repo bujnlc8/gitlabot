@@ -107,6 +107,8 @@ type PushBody struct {
 	Ref        string     `json:"ref"`
 	Commits    []Commit   `json:commits`
 	Repository Repository `json:"repository"`
+	After      string     `json:"after"`
+	UserName   string     `json:"user_name"`
 }
 
 // TagPushBody Tag events
@@ -239,14 +241,17 @@ func TransmitRobot(ctx *gin.Context) {
 		if err := bindJson(ctx, pushBody); err != nil {
 			return
 		}
-		if len(pushBody.Commits) == 0 {
+		if len(pushBody.Commits) == 0 && pushBody.After != "0000000000000000000000000000000000000000" {
 			ctx.JSON(200, &WxResp{ErrCode: 0, ErrMsg: "no commit"})
 			return
 		}
 		content = "# " + pushBody.Repository.Name + "\n"
 		content += "### On branch `" + pushBody.Ref + "`\n"
 		for _, v := range pushBody.Commits {
-			content += fmt.Sprintf("%s push a commit [%s](%s)  %s", v.Author.Name, strings.ReplaceAll(v.Message, "\n", ""), v.Url, v.TimeStamp) + "\n\n"
+			content += fmt.Sprintf("%s push a commit [%s](%s)  %s", v.Author.Name, strings.ReplaceAll(v.Message, "\n", ""), v.Url, v.TimeStamp) + "\n"
+		}
+		if pushBody.After == "0000000000000000000000000000000000000000" {
+			content += fmt.Sprintf("%s `remove` it", pushBody.UserName)
 		}
 	} else if pushEvent == "Tag Push Hook" {
 		tagPushBody := &TagPushBody{}
