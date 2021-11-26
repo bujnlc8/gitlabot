@@ -17,4 +17,4 @@
 
     ```
 
-*   在`gitlab > Settings > Integrations` 新增webhook处的Secret Token填入企业微信机器人的推送key, URL处填入`http://127.0.0.1:9000/`, 当然也可以转发到此处。
+*   在`gitlab > Settings > Integrations` 新增webhook处的Secret Token填入企业微信机器人的推送key, URL处填入`http://127.0.0.1:9000/`, 当然也可以转发到此处的地址。
